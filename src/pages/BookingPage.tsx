@@ -28,6 +28,16 @@ const BookingPage = () => {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [invalidLink, setInvalidLink] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const getWeekStart = (d: Date) => {
+    const date = new Date(d);
+    const day = date.getDay(); // 0 Sun ... 6 Sat
+    // Use Monday as start of week
+    const diff = (day === 0 ? -6 : 1) - day; // shift to Monday
+    date.setDate(date.getDate() + diff);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
+  const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()));
 
   useEffect(() => {
     if (!team_id || Number.isNaN(Number(team_id))) {
@@ -124,18 +134,25 @@ const BookingPage = () => {
     }
   };
 
-  const groupSlotsByDate = () => {
+  const groupSlotsByDate = (list: TimeSlot[]) => {
     const grouped: { [key: string]: TimeSlot[] } = {};
-    slots.forEach((slot) => {
-      if (!grouped[slot.date]) {
-        grouped[slot.date] = [];
-      }
+    list.forEach((slot) => {
+      if (!grouped[slot.date]) grouped[slot.date] = [];
       grouped[slot.date].push(slot);
     });
     return grouped;
   };
 
-  const groupedSlots = groupSlotsByDate();
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 7);
+  const filteredSlots = slots.filter((s) => {
+    const d = new Date(s.startISO);
+    return d >= weekStart && d < weekEnd;
+  });
+
+  const groupedSlots = groupSlotsByDate(filteredSlots);
+  const currentWeekStart = getWeekStart(new Date());
+  const isPrevDisabled = weekStart <= currentWeekStart;
 
   return (
     <div className="min-h-screen">
@@ -167,6 +184,21 @@ const BookingPage = () => {
               <CardDescription>Choose a time that works for you</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm text-muted-foreground">
+                  Week of {weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </div>
+                <div className="grid grid-cols-3 gap-2 w-full max-w-xs sm:max-w-none sm:w-auto sm:flex sm:items-center">
+                  <Button variant="outline" size="sm" onClick={() => setWeekStart((ws) => ws) } className="hidden" />
+                  <Button variant="outline" size="sm" onClick={() => setWeekStart((ws) => {
+                    const d = new Date(ws); d.setDate(ws.getDate() - 7); return getWeekStart(d);
+                  })} disabled={isPrevDisabled}>Prev</Button>
+                  <Button variant="outline" size="sm" onClick={() => setWeekStart(getWeekStart(new Date()))}>This week</Button>
+                  <Button variant="outline" size="sm" onClick={() => setWeekStart((ws) => {
+                    const d = new Date(ws); d.setDate(ws.getDate() + 7); return getWeekStart(d);
+                  })}>Next</Button>
+                </div>
+              </div>
               {slotsLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
