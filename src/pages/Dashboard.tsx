@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Calendar, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import DecorativeImage from "@/components/DecorativeImage";
 
 interface TeamMember {
   id: string;
@@ -74,8 +75,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-border/40 backdrop-blur-xl bg-card/30">
-        <div className="container mx-auto px-4 py-8">
+      <header className="hero-bg border-b border-border/40 backdrop-blur-xl bg-card/30">
+        <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-gradient mb-2">Scheduler</h1>
@@ -89,8 +90,10 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12">
-        <div className="grid gap-8 lg:grid-cols-2">
+      <main className="container mx-auto px-4 py-12 relative">
+        <DecorativeImage variant="figure" className="top-20 right-0 w-64 opacity-10" />
+        <DecorativeImage variant="rose" className="bottom-20 left-0 w-48 opacity-10" />
+        <div className="grid gap-8 lg:grid-cols-2 relative z-10">
           {/* Team Members Section */}
           <Card className="dreamy-card shadow-dreamy border-border/40 transition-all duration-500 hover:shadow-elevated">
             <CardHeader>

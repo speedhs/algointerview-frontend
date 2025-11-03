@@ -88,8 +88,8 @@ const BookingPage = () => {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-border/40 backdrop-blur-xl bg-card/30">
-        <div className="container mx-auto px-4 py-12">
+      <header className="hero-bg border-b border-border/40 backdrop-blur-xl bg-card/30">
+        <div className="container mx-auto px-4 py-12 relative z-10">
           <div className="text-center">
             <h1 className="text-5xl font-bold text-gradient mb-3">Book a Meeting</h1>
             <p className="text-muted-foreground text-lg">Select your preferred time slot</p>

@@ -9,83 +9,83 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 30 40% 97%;
-    --foreground: 20 20% 25%;
+    --foreground: 25 25% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 20 20% 25%;
+    --card-foreground: 25 25% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 20 20% 25%;
+    --popover-foreground: 25 25% 20%;
 
-    --primary: 340 70% 75%;
+    --primary: 200 70% 65%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 340 75% 70%;
+    --primary-hover: 200 75% 60%;
 
-    --secondary: 15 80% 75%;
+    --secondary: 25 85% 70%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-hover: 15 85% 70%;
+    --secondary-hover: 25 90% 65%;
 
     --muted: 30 30% 94%;
-    --muted-foreground: 25 15% 50%;
+    --muted-foreground: 30 15% 45%;
 
-    --accent: 200 50% 85%;
-    --accent-foreground: 20 20% 25%;
+    --accent: 180 60% 75%;
+    --accent-foreground: 25 25% 20%;
 
     --destructive: 0 70% 65%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 30 20% 88%;
     --input: 30 20% 88%;
-    --ring: 340 70% 75%;
+    --ring: 200 70% 65%;
 
     --radius: 1.5rem;
 
-    --gradient-dreamy: linear-gradient(135deg, hsl(340 70% 85%), hsl(200 60% 88%), hsl(30 60% 90%));
-    --gradient-primary: linear-gradient(135deg, hsl(340 70% 75%), hsl(15 80% 75%));
-    --gradient-secondary: linear-gradient(135deg, hsl(200 50% 85%), hsl(340 50% 85%));
-    --gradient-soft: linear-gradient(180deg, hsl(30 40% 97%), hsl(340 30% 95%));
-    --shadow-dreamy: 0 8px 32px -8px hsl(340 70% 75% / 0.25);
-    --shadow-soft: 0 4px 16px -4px hsl(340 40% 60% / 0.15);
-    --shadow-elevated: 0 12px 40px -8px hsl(340 60% 70% / 0.3);
+    --gradient-dreamy: linear-gradient(135deg, hsl(200 70% 85%), hsl(180 60% 88%), hsl(30 60% 90%));
+    --gradient-primary: linear-gradient(135deg, hsl(200 70% 65%), hsl(180 65% 70%));
+    --gradient-secondary: linear-gradient(135deg, hsl(25 85% 70%), hsl(35 80% 75%));
+    --gradient-soft: linear-gradient(180deg, hsl(200 30% 96%), hsl(30 40% 97%));
+    --shadow-dreamy: 0 8px 32px -8px hsl(200 70% 65% / 0.25);
+    --shadow-soft: 0 4px 16px -4px hsl(180 40% 60% / 0.15);
+    --shadow-elevated: 0 12px 40px -8px hsl(200 60% 70% / 0.3);
     --transition-smooth: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     --blur-soft: blur(8px);
     --blur-medium: blur(16px);
   }
 
   .dark {
-    --background: 280 20% 12%;
+    --background: 210 25% 12%;
     --foreground: 30 40% 95%;
 
-    --card: 280 15% 16%;
+    --card: 210 20% 16%;
     --card-foreground: 30 40% 95%;
 
-    --popover: 280 15% 16%;
+    --popover: 210 20% 16%;
     --popover-foreground: 30 40% 95%;
 
-    --primary: 340 60% 65%;
+    --primary: 200 60% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 340 65% 70%;
+    --primary-hover: 200 65% 65%;
 
-    --secondary: 15 70% 65%;
+    --secondary: 25 70% 60%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-hover: 15 75% 70%;
+    --secondary-hover: 25 75% 65%;
 
-    --muted: 280 15% 20%;
+    --muted: 210 20% 20%;
     --muted-foreground: 30 20% 65%;
 
-    --accent: 200 40% 65%;
+    --accent: 180 50% 65%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 60% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 280 15% 20%;
-    --input: 280 15% 20%;
-    --ring: 340 60% 65%;
+    --border: 210 20% 20%;
+    --input: 210 20% 20%;
+    --ring: 200 60% 60%;
     
-    --shadow-dreamy: 0 8px 32px -8px hsl(340 60% 40% / 0.4);
-    --shadow-soft: 0 4px 16px -4px hsl(340 40% 30% / 0.3);
-    --shadow-elevated: 0 12px 40px -8px hsl(340 50% 35% / 0.5);
+    --shadow-dreamy: 0 8px 32px -8px hsl(200 60% 40% / 0.4);
+    --shadow-soft: 0 4px 16px -4px hsl(180 40% 30% / 0.3);
+    --shadow-elevated: 0 12px 40px -8px hsl(200 50% 35% / 0.5);
   }
 }
 
@@ -96,7 +96,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    background: linear-gradient(135deg, hsl(30 40% 97%), hsl(340 30% 95%), hsl(200 30% 96%));
+    background: linear-gradient(135deg, hsl(200 30% 96%), hsl(180 25% 94%), hsl(30 40% 97%));
     background-attachment: fixed;
   }
 
@@ -111,9 +111,28 @@ All colors MUST be HSL.
   }
 
   .text-gradient {
-    background: linear-gradient(135deg, hsl(340 70% 65%), hsl(15 80% 65%));
+    background: linear-gradient(135deg, hsl(200 70% 55%), hsl(180 65% 60%), hsl(25 80% 65%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  .hero-bg {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('/src/assets/dreamy-landscape.png');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.15;
+    filter: blur(2px);
   }
 }
