@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar, Clock, User, Globe } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 interface TimeSlot {
@@ -38,6 +39,7 @@ const BookingPage = () => {
     return date;
   };
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()));
+  const [rememberMe, setRememberMe] = useState(true);
 
   useEffect(() => {
     if (!team_id || Number.isNaN(Number(team_id))) {
@@ -46,6 +48,21 @@ const BookingPage = () => {
     }
     fetchAvailableSlots();
   }, [team_id]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("bookingGuestInfo");
+      if (raw) {
+        const parsed = JSON.parse(raw) as { name?: string; email?: string; notes?: string } | null;
+        if (parsed) {
+          setGuestInfo({ name: parsed.name || "", email: parsed.email || "", notes: parsed.notes || "" });
+          setRememberMe(true);
+        }
+      }
+    } catch {
+      // ignore corrupt storage
+    }
+  }, []);
 
   const fetchAvailableSlots = async () => {
     setSlotsLoading(true);
@@ -267,7 +284,13 @@ const BookingPage = () => {
                     id="guest-name"
                     placeholder="John Doe"
                     value={guestInfo.name}
-                    onChange={(e) => setGuestInfo({ ...guestInfo, name: e.target.value })}
+                    onChange={(e) => {
+                      const next = { ...guestInfo, name: e.target.value };
+                      setGuestInfo(next);
+                      try {
+                        if (rememberMe) localStorage.setItem("bookingGuestInfo", JSON.stringify(next));
+                      } catch {}
+                    }}
                   />
                 </div>
                 <div>
@@ -277,7 +300,13 @@ const BookingPage = () => {
                     type="email"
                     placeholder="john@example.com"
                     value={guestInfo.email}
-                    onChange={(e) => setGuestInfo({ ...guestInfo, email: e.target.value })}
+                    onChange={(e) => {
+                      const next = { ...guestInfo, email: e.target.value };
+                      setGuestInfo(next);
+                      try {
+                        if (rememberMe) localStorage.setItem("bookingGuestInfo", JSON.stringify(next));
+                      } catch {}
+                    }}
                   />
                 </div>
                 <div>
@@ -286,8 +315,30 @@ const BookingPage = () => {
                     id="guest-notes"
                     placeholder="Anything you'd like us to know"
                     value={guestInfo.notes}
-                    onChange={(e) => setGuestInfo({ ...guestInfo, notes: e.target.value })}
+                    onChange={(e) => {
+                      const next = { ...guestInfo, notes: e.target.value };
+                      setGuestInfo(next);
+                      try {
+                        if (rememberMe) localStorage.setItem("bookingGuestInfo", JSON.stringify(next));
+                      } catch {}
+                    }}
                   />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="remember"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => {
+                      const next = Boolean(checked);
+                      setRememberMe(next);
+                      try {
+                        if (!next) localStorage.removeItem("bookingGuestInfo");
+                        else localStorage.setItem("bookingGuestInfo", JSON.stringify(guestInfo));
+                      } catch {}
+                    }}
+                    aria-checked={rememberMe}
+                  />
+                  <Label htmlFor="remember" className="text-sm text-muted-foreground">Remember my info on this device</Label>
                 </div>
               </div>
 
