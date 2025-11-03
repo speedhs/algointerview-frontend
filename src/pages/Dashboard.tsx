@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Calendar, ExternalLink, Link as LinkIcon, Globe } from "lucide-react";
+import { Plus, Calendar, ExternalLink, Link as LinkIcon, Globe, RefreshCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import DecorativeImage from "@/components/DecorativeImage";
@@ -64,6 +64,10 @@ const Dashboard = () => {
   const [memberTouched, setMemberTouched] = useState({ name: false, googleLink: false });
   const [availabilityTouched, setAvailabilityTouched] = useState({ memberId: false, startTime: false, endTime: false });
   const [apiStatus, setApiStatus] = useState<"unknown" | "ok" | "down">("unknown");
+  const [rrLoading, setRrLoading] = useState(false);
+  const [rrError, setRrError] = useState<string | null>(null);
+  const [rrOrder, setRrOrder] = useState<TeamMember[]>([]);
+  const [rrPosition, setRrPosition] = useState(0);
 
   const isTeamSelected = teamId !== null;
   const isNewMemberValid = Boolean(newMember.name.trim()) && Boolean(newMember.googleLink.trim());
@@ -120,6 +124,7 @@ const Dashboard = () => {
       const id = Number(storedTeamId);
       setTeamId(id);
       void fetchMembers(id);
+      void fetchRoundRobin(id);
     }
     // Health check
     let cancelled = false;
@@ -142,6 +147,28 @@ const Dashboard = () => {
       clearInterval(id);
     };
   }, [navigate]);
+
+  const fetchRoundRobin = async (id: number) => {
+    setRrLoading(true);
+    setRrError(null);
+    try {
+      const res = await fetch(`/api/teams/${id}/roundrobin`);
+      if (!res.ok) throw new Error();
+      const data: { round_robin_position: number; member_order: Array<{ id: number; name: string; google_booking_link: string; display_email?: string | null }> } = await res.json();
+      const mapped: TeamMember[] = data.member_order.map((m) => ({
+        id: m.id,
+        name: m.name,
+        google_booking_link: m.google_booking_link,
+        display_email: m.display_email ?? null,
+      }));
+      setRrOrder(mapped);
+      setRrPosition(data.round_robin_position || 0);
+    } catch {
+      setRrError("Unable to load order");
+    } finally {
+      setRrLoading(false);
+    }
+  };
 
   const fetchMembers = async (id: number) => {
     try {
@@ -482,6 +509,54 @@ const Dashboard = () => {
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Round Robin Status */}
+          <Card className="dreamy-card shadow-dreamy border-border/40 transition-all duration-500 hover:shadow-elevated">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">Round Robin</CardTitle>
+              <CardDescription>Who will be assigned next</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  {rrLoading ? "Loading…" : rrError ? rrError : rrOrder.length === 0 ? "No members yet" : ""}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => teamId && fetchRoundRobin(teamId)}
+                  disabled={!teamId || rrLoading}
+                >
+                  <RefreshCcw className="h-4 w-4 mr-2" /> Refresh
+                </Button>
+              </div>
+              {rrOrder.length > 0 && (
+                <div className="space-y-2">
+                  <div className="rounded-xl border border-border/40 p-3 bg-card/50">
+                    <p className="text-xs text-muted-foreground mb-1">Next up</p>
+                    <p className="font-medium">
+                      {rrOrder[(rrPosition % rrOrder.length + rrOrder.length) % rrOrder.length]?.name}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {rrOrder.map((m, idx) => {
+                      const isNext = ((rrPosition % rrOrder.length) + rrOrder.length) % rrOrder.length === idx;
+                      return (
+                        <span
+                          key={m.id}
+                          className={`px-2 py-1 rounded-full text-xs border ${
+                            isNext ? "border-primary text-primary" : "border-border/60 text-muted-foreground"
+                          }`}
+                        >
+                          {m.name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
