@@ -73,15 +73,15 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen">
+      <header className="border-b border-border/40 backdrop-blur-xl bg-card/30">
+        <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Scheduler Dashboard</h1>
-              <p className="text-muted-foreground mt-1">Manage your team and availability</p>
+              <h1 className="text-4xl font-bold text-gradient mb-2">Scheduler</h1>
+              <p className="text-muted-foreground">Manage your team with grace</p>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="backdrop-blur-sm border-primary/30 hover:border-primary/50">
               <Calendar className="mr-2 h-4 w-4" />
               View Bookings
             </Button>
@@ -89,10 +89,10 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-12">
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Team Members Section */}
-          <Card className="shadow-lg">
+          <Card className="dreamy-card shadow-dreamy border-border/40 transition-all duration-500 hover:shadow-elevated">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5" />
@@ -120,7 +120,7 @@ const Dashboard = () => {
                     onChange={(e) => setNewMember({ ...newMember, googleLink: e.target.value })}
                   />
                 </div>
-                <Button onClick={addMember} className="w-full">
+                <Button onClick={addMember} className="w-full shadow-soft hover:shadow-dreamy transition-all duration-500">
                   Add Member
                 </Button>
               </div>
@@ -129,7 +129,7 @@ const Dashboard = () => {
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center justify-between rounded-lg border bg-muted/50 p-4"
+                    className="flex items-center justify-between rounded-2xl border border-border/40 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-4 transition-all duration-300 hover:shadow-soft"
                   >
                     <div className="flex-1">
                       <p className="font-medium">{member.name}</p>
@@ -150,7 +150,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Availability Section */}
-          <Card className="shadow-lg">
+          <Card className="dreamy-card shadow-dreamy border-border/40 transition-all duration-500 hover:shadow-elevated">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
@@ -211,7 +211,7 @@ const Dashboard = () => {
                     />
                   </div>
                 </div>
-                <Button onClick={addAvailability} className="w-full">
+                <Button onClick={addAvailability} className="w-full shadow-soft hover:shadow-dreamy transition-all duration-500">
                   Add Availability
                 </Button>
               </div>
@@ -222,7 +222,7 @@ const Dashboard = () => {
                   return (
                     <div
                       key={block.id}
-                      className="rounded-lg border bg-muted/50 p-4"
+                      className="rounded-2xl border border-border/40 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-4 transition-all duration-300 hover:shadow-soft"
                     >
                       <p className="font-medium">{member?.name}</p>
                       <p className="text-sm text-muted-foreground">

@@ -87,20 +87,20 @@ const BookingPage = () => {
   const groupedSlots = groupSlotsByDate();
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen">
+      <header className="border-b border-border/40 backdrop-blur-xl bg-card/30">
+        <div className="container mx-auto px-4 py-12">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-foreground">Book a Meeting</h1>
-            <p className="text-muted-foreground mt-1">Select your preferred time slot</p>
+            <h1 className="text-5xl font-bold text-gradient mb-3">Book a Meeting</h1>
+            <p className="text-muted-foreground text-lg">Select your preferred time slot</p>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-12 max-w-4xl">
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Available Slots */}
-          <Card className="shadow-lg">
+          <Card className="dreamy-card shadow-dreamy border-border/40 transition-all duration-500 hover:shadow-elevated">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
@@ -123,7 +123,7 @@ const BookingPage = () => {
                       <Button
                         key={slot.id}
                         variant={selectedSlot === slot.id ? "default" : "outline"}
-                        className="justify-start"
+                        className="justify-start transition-all duration-300 hover:shadow-soft border-border/40"
                         onClick={() => setSelectedSlot(slot.id)}
                       >
                         <Clock className="mr-2 h-4 w-4" />
@@ -137,7 +137,7 @@ const BookingPage = () => {
           </Card>
 
           {/* Guest Information */}
-          <Card className="shadow-lg">
+          <Card className="dreamy-card shadow-dreamy border-border/40 transition-all duration-500 hover:shadow-elevated">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
@@ -169,7 +169,7 @@ const BookingPage = () => {
               </div>
 
               {selectedSlot && (
-                <div className="rounded-lg border bg-muted/50 p-4">
+                <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-secondary/10 backdrop-blur-sm p-4">
                   <p className="text-sm font-medium mb-2">Selected Time:</p>
                   <p className="text-sm text-muted-foreground">
                     {(() => {
@@ -184,7 +184,7 @@ const BookingPage = () => {
               <Button
                 onClick={handleBooking}
                 disabled={loading || !selectedSlot}
-                className="w-full"
+                className="w-full shadow-dreamy hover:shadow-elevated transition-all duration-500"
                 size="lg"
               >
                 {loading ? "Booking..." : "Confirm Booking"}
