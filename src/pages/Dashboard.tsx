@@ -7,6 +7,16 @@ import { Plus, Calendar, ExternalLink, Link as LinkIcon, Globe } from "lucide-re
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import DecorativeImage from "@/components/DecorativeImage";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface TeamMember {
   id: number;
@@ -310,6 +320,35 @@ const Dashboard = () => {
                 <Calendar className="mr-2 h-4 w-4" />
                 View Public Page
               </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="border-destructive/40 hover:border-destructive/60">
+                    Logout
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Log out?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      You'll be redirected to the admin login. Your team data stays saved locally.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        try {
+                          localStorage.removeItem("adminToken");
+                          localStorage.removeItem("teamId");
+                        } catch {}
+                        navigate("/admin/login", { replace: true });
+                      }}
+                    >
+                      Logout
+                    </AlertDialogAction>
+                  </div>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>
