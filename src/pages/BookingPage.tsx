@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, User } from "lucide-react";
+import { Calendar, Clock, User, Globe } from "lucide-react";
 import { toast } from "sonner";
 
 interface TimeSlot {
@@ -110,6 +110,10 @@ const BookingPage = () => {
           <div className="text-center">
             <h1 className="text-5xl font-bold text-gradient mb-3">Book a Meeting</h1>
             <p className="text-muted-foreground text-lg">Select your preferred time slot</p>
+            <p className="mt-2 inline-flex items-center gap-2 text-sm text-muted-foreground">
+              <Globe className="h-4 w-4" />
+              Times shown in {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </p>
           </div>
         </div>
       </header>
@@ -126,30 +130,36 @@ const BookingPage = () => {
               <CardDescription>Choose a time that works for you</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {Object.entries(groupedSlots).map(([date, dateSlots]) => (
-                <div key={date} className="space-y-3">
-                  <h3 className="font-semibold text-sm text-muted-foreground">
-                    {new Date(date).toLocaleDateString("en-US", {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {dateSlots.map((slot) => (
-                      <Button
-                        key={slot.id}
-                        variant={selectedSlot === slot.id ? "default" : "outline"}
-                        className="justify-start transition-all duration-300 hover:shadow-soft border-border/40"
-                        onClick={() => setSelectedSlot(slot.id)}
-                      >
-                        <Clock className="mr-2 h-4 w-4" />
-                        {slot.start}
-                      </Button>
-                    ))}
-                  </div>
+              {Object.keys(groupedSlots).length === 0 ? (
+                <div className="text-center text-sm text-muted-foreground py-6">
+                  No available times. Please check back later.
                 </div>
-              ))}
+              ) : (
+                Object.entries(groupedSlots).map(([date, dateSlots]) => (
+                  <div key={date} className="space-y-3">
+                    <h3 className="font-semibold text-sm text-muted-foreground">
+                      {new Date(date).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {dateSlots.map((slot) => (
+                        <Button
+                          key={slot.id}
+                          variant={selectedSlot === slot.id ? "default" : "outline"}
+                          className="justify-start transition-all duration-300 hover:shadow-soft border-border/40"
+                          onClick={() => setSelectedSlot(slot.id)}
+                        >
+                          <Clock className="mr-2 h-4 w-4" />
+                          {slot.start}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
 

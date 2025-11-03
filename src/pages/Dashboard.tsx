@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Calendar, ExternalLink } from "lucide-react";
+import { Plus, Calendar, ExternalLink, Link as LinkIcon, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import DecorativeImage from "@/components/DecorativeImage";
@@ -22,6 +22,14 @@ interface AvailabilityBlockForm {
   endTime: string;
 }
 
+interface AvailabilityBlock {
+  id: string;
+  memberId: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+}
+
 interface Team {
   id: number;
   name: string;
@@ -29,7 +37,6 @@ interface Team {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [token, setToken] = useState<string | null>(null);
   const [teamId, setTeamId] = useState<number | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [newTeamName, setNewTeamName] = useState("");
@@ -41,57 +48,38 @@ const Dashboard = () => {
     startTime: "09:00",
     endTime: "17:00",
   });
+  const [availability, setAvailability] = useState<AvailabilityBlock[]>([]);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const s = await fetch("/api/setup/status");
-        const st = await s.json();
-        if (!st.initialized) {
-          navigate("/setup", { replace: true });
-          return;
-        }
-      } catch {}
-      const t = localStorage.getItem("adminToken");
-      if (!t) {
-        navigate("/admin/login", { replace: true });
-        return;
-      }
-      setToken(t);
-      await fetchTeams(t);
-      const stored = localStorage.getItem("teamId");
-      if (stored) {
-        const id = Number(stored);
-        setTeamId(id);
-        await fetchMembers(id, t);
-      }
-    };
-    init();
+    const initialized = localStorage.getItem("adminSetup") === "true";
+    if (!initialized) {
+      navigate("/setup", { replace: true });
+      return;
+    }
+    const token = localStorage.getItem("adminToken");
+    if (!token) {
+      navigate("/admin/login", { replace: true });
+      return;
+    }
+    const storedTeamsRaw = localStorage.getItem("teams");
+    const storedTeams: Team[] = storedTeamsRaw ? JSON.parse(storedTeamsRaw) : [];
+    setTeams(storedTeams);
+    const storedTeamId = localStorage.getItem("teamId");
+    if (storedTeamId) {
+      const id = Number(storedTeamId);
+      setTeamId(id);
+      void fetchMembers(id);
+    }
   }, [navigate]);
 
-  const fetchMembers = async (id: number, t?: string | null) => {
+  const fetchMembers = async (id: number) => {
     try {
-      const res = await fetch(`/api/teams/${id}/members`, {
-        headers: { Authorization: `Bearer ${t ?? token}` },
-      });
+      const res = await fetch(`/api/teams/${id}/members`);
       if (!res.ok) throw new Error();
       const data = await res.json();
       setMembers(data);
     } catch {
       toast.error("Failed to load members");
-    }
-  };
-
-  const fetchTeams = async (t: string) => {
-    try {
-      const res = await fetch(`/api/teams`, {
-        headers: { Authorization: `Bearer ${t}` },
-      });
-      if (!res.ok) throw new Error();
-      const data: Team[] = await res.json();
-      setTeams(data);
-    } catch {
-      toast.error("Failed to load teams");
     }
   };
 
@@ -103,18 +91,28 @@ const Dashboard = () => {
     try {
       const res = await fetch(`/api/teams`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newTeamName }),
       });
       if (!res.ok) throw new Error();
       const tCreated: Team = await res.json();
-      setTeams((prev) => [...prev, tCreated]);
+      const updated = [...teams, tCreated];
+      setTeams(updated);
+      localStorage.setItem("teams", JSON.stringify(updated));
       setTeamId(tCreated.id);
       localStorage.setItem("teamId", String(tCreated.id));
       setNewTeamName("");
       toast.success("Team created");
     } catch {
-      toast.error("Failed to create team");
+      // Fallback: local-only team when backend isn't available
+      const localTeam: Team = { id: Date.now(), name: newTeamName };
+      const updated = [...teams, localTeam];
+      setTeams(updated);
+      localStorage.setItem("teams", JSON.stringify(updated));
+      setTeamId(localTeam.id);
+      localStorage.setItem("teamId", String(localTeam.id));
+      setNewTeamName("");
+      toast.success("Team created locally");
     }
   };
 
@@ -130,7 +128,7 @@ const Dashboard = () => {
     try {
       const res = await fetch(`/api/teams/${teamId}/members`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newMember.name,
           google_booking_link: newMember.googleLink,
@@ -148,7 +146,7 @@ const Dashboard = () => {
 
   const connectOAuth = (memberId: number) => {
     // Open OAuth flow in new window
-    const authUrl = `/api/auth/google/login?member_id=${memberId}&token=${token}`;
+    const authUrl = `/api/auth/google/login?member_id=${memberId}`;
     window.open(authUrl, "_blank", "width=600,height=700");
     toast.info("OAuth window opened");
   };
@@ -196,13 +194,61 @@ const Dashboard = () => {
       };
       const res = await fetch(`/api/teams/${teamId}/availability`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error();
+      setAvailability((prev) => [
+        ...prev,
+        {
+          id: String(Date.now()),
+          memberId: newBlock.memberId,
+          dayOfWeek: newBlock.dayOfWeek,
+          startTime: newBlock.startTime,
+          endTime: newBlock.endTime,
+        },
+      ]);
       toast.success("Availability block added");
     } catch {
       toast.error("Failed to add availability");
+    }
+  };
+
+  const addWeekPreset = async () => {
+    if (!teamId) {
+      toast.error("Select a team first");
+      return;
+    }
+    if (!newBlock.memberId) {
+      toast.error("Please select a team member");
+      return;
+    }
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    try {
+      const now = new Date();
+      const day = now.getDay();
+      const daysUntilMonday = (8 - day) % 7 || 7;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + daysUntilMonday);
+      const blocks = [0, 1, 2, 3, 4].map((offset) => {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + offset);
+        const start = new Date(d);
+        start.setHours(9, 0, 0, 0);
+        const end = new Date(d);
+        end.setHours(17, 0, 0, 0);
+        return { start_time: start.toISOString(), end_time: end.toISOString() };
+      });
+      const payload = { member_id: Number(newBlock.memberId), blocks };
+      const res = await fetch(`/api/teams/${teamId}/availability`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(`Added Mon–Fri 9–5 for next week (${tz})`);
+    } catch {
+      toast.error("Failed to add weekly preset");
     }
   };
 
@@ -215,10 +261,39 @@ const Dashboard = () => {
               <h1 className="text-4xl font-bold text-gradient mb-2">Scheduler</h1>
               <p className="text-muted-foreground">Manage your team with grace</p>
             </div>
-            <Button variant="outline" size="sm" className="backdrop-blur-sm border-primary/30 hover:border-primary/50">
-              <Calendar className="mr-2 h-4 w-4" />
-              View Bookings
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="backdrop-blur-sm border-primary/30 hover:border-primary/50"
+                onClick={() => {
+                  if (!teamId) {
+                    toast.error("Select a team first");
+                    return;
+                  }
+                  const link = `${window.location.origin}/book/${teamId}`;
+                  navigator.clipboard.writeText(link).then(() => toast.success("Booking link copied"));
+                }}
+              >
+                <LinkIcon className="mr-2 h-4 w-4" />
+                Copy Link
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="backdrop-blur-sm border-primary/30 hover:border-primary/50"
+                onClick={() => {
+                  if (!teamId) {
+                    toast.error("Select a team first");
+                    return;
+                  }
+                  window.open(`/book/${teamId}`, "_blank");
+                }}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                View Public Page
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -325,7 +400,13 @@ const Dashboard = () => {
                 <Calendar className="h-5 w-5" />
                 Availability
               </CardTitle>
-              <CardDescription>Set availability blocks for team members</CardDescription>
+              <CardDescription className="flex items-center gap-2">
+                Set availability blocks for team members
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Globe className="h-3 w-3" />
+                  Times shown in {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                </span>
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
@@ -380,9 +461,14 @@ const Dashboard = () => {
                     />
                   </div>
                 </div>
-                <Button onClick={addAvailability} className="w-full shadow-soft hover:shadow-dreamy transition-all duration-500">
-                  Add Availability
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button onClick={addAvailability} className="w-full shadow-soft hover:shadow-dreamy transition-all duration-500">
+                    Add Availability
+                  </Button>
+                  <Button variant="outline" onClick={addWeekPreset} className="w-full">
+                    Add Mon–Fri 9–5 Next Week
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-3">

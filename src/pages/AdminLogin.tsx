@@ -5,6 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+async function sha256Hex(input: string): Promise<string> {
+  const enc = new TextEncoder();
+  const data = enc.encode(input);
+  const hashBuf = await crypto.subtle.digest("SHA-256", data);
+  const hashArr = Array.from(new Uint8Array(hashBuf));
+  return hashArr.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
@@ -12,6 +20,11 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const initialized = localStorage.getItem("adminSetup") === "true";
+    if (!initialized) {
+      navigate("/setup", { replace: true });
+      return;
+    }
     const token = localStorage.getItem("adminToken");
     if (token) navigate("/", { replace: true });
   }, [navigate]);
@@ -23,19 +36,16 @@ const AdminLogin = () => {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      if (!res.ok) {
+      const storedUser = localStorage.getItem("adminUsername");
+      const storedHash = localStorage.getItem("adminPasswordHash");
+      const inputHash = await sha256Hex(password);
+      if (storedUser === username && storedHash === inputHash) {
+        localStorage.setItem("adminToken", "local-admin-token");
+        toast.success("Logged in");
+        navigate("/", { replace: true });
+      } else {
         toast.error("Invalid credentials");
-        return;
       }
-      const data = await res.json();
-      localStorage.setItem("adminToken", data.token);
-      toast.success("Logged in");
-      navigate("/", { replace: true });
     } catch {
       toast.error("Login failed");
     } finally {

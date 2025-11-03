@@ -5,6 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+async function sha256Hex(input: string): Promise<string> {
+  const enc = new TextEncoder();
+  const data = enc.encode(input);
+  const hashBuf = await crypto.subtle.digest("SHA-256", data);
+  const hashArr = Array.from(new Uint8Array(hashBuf));
+  return hashArr.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 const Setup = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
@@ -12,18 +20,8 @@ const Setup = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const check = async () => {
-      try {
-        const res = await fetch("/api/setup/status");
-        const data = await res.json();
-        if (data.initialized) {
-          navigate("/admin/login", { replace: true });
-        }
-      } catch {
-        // ignore
-      }
-    };
-    check();
+    const initialized = localStorage.getItem("adminSetup") === "true";
+    if (initialized) navigate("/admin/login", { replace: true });
   }, [navigate]);
 
   const handleInit = async () => {
@@ -33,17 +31,11 @@ const Setup = () => {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/setup/initialize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      if (!res.ok) {
-        toast.error("Setup failed or already initialized");
-        return;
-      }
-      const data = await res.json();
-      localStorage.setItem("adminToken", data.token);
+      const hash = await sha256Hex(password);
+      localStorage.setItem("adminSetup", "true");
+      localStorage.setItem("adminUsername", username);
+      localStorage.setItem("adminPasswordHash", hash);
+      localStorage.setItem("adminToken", "local-admin-token");
       toast.success("Super admin created");
       navigate("/", { replace: true });
     } catch {
