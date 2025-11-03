@@ -7,6 +7,8 @@ import Dashboard from "./pages/Dashboard";
 import BookingPage from "./pages/BookingPage";
 import Success from "./pages/Success";
 import NotFound from "./pages/NotFound";
+import Setup from "./pages/Setup";
+import AdminLogin from "./pages/AdminLogin";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +19,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/setup" element={<Setup />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/book/:team_id" element={<BookingPage />} />
           <Route path="/success" element={<Success />} />

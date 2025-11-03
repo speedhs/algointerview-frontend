@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Calendar, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import DecorativeImage from "@/components/DecorativeImage";
 
@@ -21,8 +22,17 @@ interface AvailabilityBlockForm {
   endTime: string;
 }
 
+interface Team {
+  id: number;
+  name: string;
+}
+
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const [token, setToken] = useState<string | null>(null);
   const [teamId, setTeamId] = useState<number | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [newTeamName, setNewTeamName] = useState("");
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [newMember, setNewMember] = useState({ name: "", googleLink: "" });
   const [newBlock, setNewBlock] = useState<AvailabilityBlockForm>({
@@ -33,39 +43,78 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
-    const initializeTeam = async () => {
+    const init = async () => {
+      try {
+        const s = await fetch("/api/setup/status");
+        const st = await s.json();
+        if (!st.initialized) {
+          navigate("/setup", { replace: true });
+          return;
+        }
+      } catch {}
+      const t = localStorage.getItem("adminToken");
+      if (!t) {
+        navigate("/admin/login", { replace: true });
+        return;
+      }
+      setToken(t);
+      await fetchTeams(t);
       const stored = localStorage.getItem("teamId");
       if (stored) {
         const id = Number(stored);
         setTeamId(id);
-        await fetchMembers(id);
-        return;
-      }
-      try {
-        const res = await fetch("/api/teams", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: "My Team" }),
-        });
-        if (!res.ok) throw new Error("Failed to create team");
-        const data = await res.json();
-        setTeamId(data.id);
-        localStorage.setItem("teamId", String(data.id));
-      } catch (e) {
-        toast.error("Unable to initialize team");
+        await fetchMembers(id, t);
       }
     };
-    initializeTeam();
-  }, []);
+    init();
+  }, [navigate]);
 
-  const fetchMembers = async (id: number) => {
+  const fetchMembers = async (id: number, t?: string | null) => {
     try {
-      const res = await fetch(`/api/teams/${id}/members`);
+      const res = await fetch(`/api/teams/${id}/members`, {
+        headers: { Authorization: `Bearer ${t ?? token}` },
+      });
       if (!res.ok) throw new Error();
       const data = await res.json();
       setMembers(data);
     } catch {
       toast.error("Failed to load members");
+    }
+  };
+
+  const fetchTeams = async (t: string) => {
+    try {
+      const res = await fetch(`/api/teams`, {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (!res.ok) throw new Error();
+      const data: Team[] = await res.json();
+      setTeams(data);
+    } catch {
+      toast.error("Failed to load teams");
+    }
+  };
+
+  const createTeam = async () => {
+    if (!newTeamName) {
+      toast.error("Team name is required");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/teams`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: newTeamName }),
+      });
+      if (!res.ok) throw new Error();
+      const tCreated: Team = await res.json();
+      setTeams((prev) => [...prev, tCreated]);
+      setTeamId(tCreated.id);
+      localStorage.setItem("teamId", String(tCreated.id));
+      setNewTeamName("");
+      toast.success("Team created");
+    } catch {
+      toast.error("Failed to create team");
     }
   };
 
@@ -81,7 +130,7 @@ const Dashboard = () => {
     try {
       const res = await fetch(`/api/teams/${teamId}/members`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           name: newMember.name,
           google_booking_link: newMember.googleLink,
@@ -99,7 +148,7 @@ const Dashboard = () => {
 
   const connectOAuth = (memberId: number) => {
     // Open OAuth flow in new window
-    const authUrl = `/api/auth/google/login?member_id=${memberId}`;
+    const authUrl = `/api/auth/google/login?member_id=${memberId}&token=${token}`;
     window.open(authUrl, "_blank", "width=600,height=700");
     toast.info("OAuth window opened");
   };
@@ -147,7 +196,7 @@ const Dashboard = () => {
       };
       const res = await fetch(`/api/teams/${teamId}/availability`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error();
@@ -178,6 +227,43 @@ const Dashboard = () => {
         <DecorativeImage variant="figure" className="top-20 right-0 w-64 opacity-10" />
         <DecorativeImage variant="rose" className="bottom-20 left-0 w-48 opacity-10" />
         <div className="grid gap-8 lg:grid-cols-2 relative z-10">
+          {/* Team Selection & Creation */}
+          <Card className="dreamy-card shadow-dreamy border-border/40 transition-all duration-500 hover:shadow-elevated">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">Teams</CardTitle>
+              <CardDescription>Select or create a team</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="team">Select Team</Label>
+                <select
+                  id="team"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={teamId ?? ""}
+                  onChange={async (e) => {
+                    const id = Number(e.target.value);
+                    setTeamId(id);
+                    localStorage.setItem("teamId", String(id));
+                    await fetchMembers(id);
+                  }}
+                >
+                  <option value="">Select team</option>
+                  {teams.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-2">
+                  <Input placeholder="New team name" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} />
+                </div>
+                <Button onClick={createTeam}>Create</Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Team Members Section */}
           <Card className="dreamy-card shadow-dreamy border-border/40 transition-all duration-500 hover:shadow-elevated">
             <CardHeader>
@@ -222,11 +308,7 @@ const Dashboard = () => {
                       <p className="font-medium">{member.name}</p>
                       <p className="text-sm text-muted-foreground truncate">{member.google_booking_link}</p>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="default"
-                      onClick={() => connectOAuth(member.id)}
-                    >
+                    <Button size="sm" variant="default" onClick={() => connectOAuth(member.id)}>
                       <ExternalLink className="mr-2 h-4 w-4" />
                       Connect
                     </Button>
