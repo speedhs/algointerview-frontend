@@ -63,6 +63,7 @@ const Dashboard = () => {
   const [availabilitySubmitting, setAvailabilitySubmitting] = useState(false);
   const [memberTouched, setMemberTouched] = useState({ name: false, googleLink: false });
   const [availabilityTouched, setAvailabilityTouched] = useState({ memberId: false, startTime: false, endTime: false });
+  const [apiStatus, setApiStatus] = useState<"unknown" | "ok" | "down">("unknown");
 
   const isTeamSelected = teamId !== null;
   const isNewMemberValid = Boolean(newMember.name.trim()) && Boolean(newMember.googleLink.trim());
@@ -120,6 +121,26 @@ const Dashboard = () => {
       setTeamId(id);
       void fetchMembers(id);
     }
+    // Health check
+    let cancelled = false;
+    const checkHealth = async () => {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        const res = await fetch(`/api/health`, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (cancelled) return;
+        setApiStatus(res.ok ? "ok" : "down");
+      } catch {
+        if (!cancelled) setApiStatus("down");
+      }
+    };
+    checkHealth();
+    const id = setInterval(checkHealth, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [navigate]);
 
   const fetchMembers = async (id: number) => {
@@ -318,6 +339,20 @@ const Dashboard = () => {
               <p className="text-muted-foreground">Manage your team with grace</p>
             </div>
             <div className="flex items-center gap-2">
+              <div
+                className="hidden sm:inline-flex items-center gap-2 rounded-full border border-border/40 px-2 py-1"
+                role="status"
+                aria-live="polite"
+                title={apiStatus === "ok" ? "API healthy" : apiStatus === "down" ? "API unreachable" : "API status unknown"}
+              >
+                <span
+                  className={`inline-block h-2 w-2 rounded-full ${
+                    apiStatus === "ok" ? "bg-emerald-500" : apiStatus === "down" ? "bg-red-500" : "bg-yellow-500"
+                  }`}
+                  aria-hidden="true"
+                />
+                <span className="text-xs text-muted-foreground">API</span>
+              </div>
               <Button
                 variant="outline"
                 size="sm"
