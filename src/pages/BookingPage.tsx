@@ -96,6 +96,19 @@ const BookingPage = () => {
       });
 
       if (response.ok) {
+        try {
+          localStorage.setItem(
+            "lastBooking",
+            JSON.stringify({
+              startISO: slot.startISO,
+              endISO: slot.endISO,
+              name: guestInfo.name,
+              email: guestInfo.email,
+              summary: `Booking with ${guestInfo.name}`,
+              notes: guestInfo.notes || "",
+            }),
+          );
+        } catch {}
         toast.success("Booking confirmed!");
         navigate("/success");
       } else if (response.status === 409) {
