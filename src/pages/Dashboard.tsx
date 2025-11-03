@@ -69,6 +69,37 @@ const Dashboard = () => {
   const isAvailabilityTimeValid = newBlock.startTime < newBlock.endTime;
   const isAvailabilityValid = Boolean(newBlock.memberId) && Boolean(newBlock.startTime) && Boolean(newBlock.endTime) && isAvailabilityTimeValid;
 
+  const removeTeamLocally = (id: number) => {
+    const updated = teams.filter((t) => t.id !== id);
+    setTeams(updated);
+    localStorage.setItem("teams", JSON.stringify(updated));
+    if (teamId === id) {
+      setTeamId(null);
+      localStorage.removeItem("teamId");
+      setMembers([]);
+      setAvailability([]);
+      setNewMember({ name: "", googleLink: "" });
+      setNewBlock({ memberId: "", dayOfWeek: "Monday", startTime: "09:00", endTime: "17:00" });
+    }
+  };
+
+  const deleteTeam = async () => {
+    if (!teamId) {
+      toast.error("Select a team first");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/teams/${teamId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      removeTeamLocally(teamId);
+      toast.success("Team deleted");
+    } catch {
+      // Fallback: remove locally if server delete is unavailable
+      removeTeamLocally(teamId);
+      toast.success("Team deleted locally");
+    }
+  };
+
   useEffect(() => {
     const initialized = localStorage.getItem("adminSetup") === "true";
     if (!initialized) {
@@ -391,6 +422,30 @@ const Dashboard = () => {
                   <Input placeholder="New team name" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} />
                 </div>
                 <Button onClick={createTeam}>Create</Button>
+              </div>
+              <div className="flex justify-between pt-2">
+                <div className="text-xs text-muted-foreground">
+                  {teamId ? `Selected Team ID: ${teamId}` : "No team selected"}
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" disabled={!isTeamSelected}>
+                      Delete Team
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this team?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will remove the team from your local list. Server-side removal will be attempted if available.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="flex justify-end gap-2 pt-2">
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={deleteTeam}>Delete</AlertDialogAction>
+                    </div>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardContent>
           </Card>
