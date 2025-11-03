@@ -201,6 +201,16 @@ const BookingPage = () => {
               <CardDescription>Choose a time that works for you</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="flex items-center justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedSlot(null)}
+                  disabled={!selectedSlot}
+                >
+                  Clear selection
+                </Button>
+              </div>
               <div className="flex items-center justify-between gap-3">
                 <div className="text-sm text-muted-foreground">
                   Week of {weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
