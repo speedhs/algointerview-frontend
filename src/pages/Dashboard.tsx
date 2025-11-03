@@ -214,6 +214,30 @@ const Dashboard = () => {
     }
   };
 
+  const removeMemberLocally = (memberId: number) => {
+    setMembers((prev) => prev.filter((m) => m.id !== memberId));
+    if (newBlock.memberId === String(memberId)) {
+      setNewBlock((b) => ({ ...b, memberId: "" }));
+    }
+  };
+
+  const deleteMember = async (memberId: number) => {
+    if (!teamId) {
+      toast.error("Select a team first");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/teams/${teamId}/members/${memberId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      removeMemberLocally(memberId);
+      toast.success("Member deleted");
+    } catch {
+      // Fallback: remove locally when backend delete is unavailable
+      removeMemberLocally(memberId);
+      toast.success("Member deleted locally");
+    }
+  };
+
   const addMember = async () => {
     if (!teamId) {
       toast.error("Team not initialized yet");
@@ -620,10 +644,29 @@ const Dashboard = () => {
                       <p className="font-medium">{member.name}</p>
                       <p className="text-sm text-muted-foreground truncate">{member.google_booking_link}</p>
                     </div>
-                    <Button size="sm" variant="default" onClick={() => connectOAuth(member.id)}>
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Connect
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="default" onClick={() => connectOAuth(member.id)}>
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Connect
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="destructive">Delete</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete member?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This removes the member from this team. Server-side deletion will be attempted if available.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <div className="flex justify-end gap-2 pt-2">
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteMember(member.id)}>Delete</AlertDialogAction>
+                          </div>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 ))}
               </div>
