@@ -49,6 +49,15 @@ const Dashboard = () => {
     endTime: "17:00",
   });
   const [availability, setAvailability] = useState<AvailabilityBlock[]>([]);
+  const [memberSubmitting, setMemberSubmitting] = useState(false);
+  const [availabilitySubmitting, setAvailabilitySubmitting] = useState(false);
+  const [memberTouched, setMemberTouched] = useState({ name: false, googleLink: false });
+  const [availabilityTouched, setAvailabilityTouched] = useState({ memberId: false, startTime: false, endTime: false });
+
+  const isTeamSelected = teamId !== null;
+  const isNewMemberValid = Boolean(newMember.name.trim()) && Boolean(newMember.googleLink.trim());
+  const isAvailabilityTimeValid = newBlock.startTime < newBlock.endTime;
+  const isAvailabilityValid = Boolean(newBlock.memberId) && Boolean(newBlock.startTime) && Boolean(newBlock.endTime) && isAvailabilityTimeValid;
 
   useEffect(() => {
     const initialized = localStorage.getItem("adminSetup") === "true";
@@ -126,6 +135,7 @@ const Dashboard = () => {
       return;
     }
     try {
+      setMemberSubmitting(true);
       const res = await fetch(`/api/teams/${teamId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -141,6 +151,8 @@ const Dashboard = () => {
       toast.success("Team member added successfully");
     } catch {
       toast.error("Failed to add member");
+    } finally {
+      setMemberSubmitting(false);
     }
   };
 
@@ -161,6 +173,7 @@ const Dashboard = () => {
       return;
     }
     try {
+      setAvailabilitySubmitting(true);
       const days = [
         "Sunday",
         "Monday",
@@ -211,6 +224,8 @@ const Dashboard = () => {
       toast.success("Availability block added");
     } catch {
       toast.error("Failed to add availability");
+    } finally {
+      setAvailabilitySubmitting(false);
     }
   };
 
@@ -274,6 +289,7 @@ const Dashboard = () => {
                   const link = `${window.location.origin}/book/${teamId}`;
                   navigator.clipboard.writeText(link).then(() => toast.success("Booking link copied"));
                 }}
+                disabled={!isTeamSelected}
               >
                 <LinkIcon className="mr-2 h-4 w-4" />
                 Copy Link
@@ -289,6 +305,7 @@ const Dashboard = () => {
                   }
                   window.open(`/book/${teamId}`, "_blank");
                 }}
+                disabled={!isTeamSelected}
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 View Public Page
@@ -357,7 +374,13 @@ const Dashboard = () => {
                     placeholder="John Doe"
                     value={newMember.name}
                     onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                    onBlur={() => setMemberTouched((t) => ({ ...t, name: true }))}
+                    aria-invalid={memberTouched.name && !newMember.name}
+                    aria-describedby={memberTouched.name && !newMember.name ? "name-error" : undefined}
                   />
+                  {memberTouched.name && !newMember.name && (
+                    <p id="name-error" className="mt-1 text-xs text-destructive">Name is required</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="google-link">Google Calendar Link</Label>
@@ -366,10 +389,20 @@ const Dashboard = () => {
                     placeholder="https://calendar.google.com/..."
                     value={newMember.googleLink}
                     onChange={(e) => setNewMember({ ...newMember, googleLink: e.target.value })}
+                    onBlur={() => setMemberTouched((t) => ({ ...t, googleLink: true }))}
+                    aria-invalid={memberTouched.googleLink && !newMember.googleLink}
+                    aria-describedby={memberTouched.googleLink && !newMember.googleLink ? "google-link-error" : undefined}
                   />
+                  {memberTouched.googleLink && !newMember.googleLink && (
+                    <p id="google-link-error" className="mt-1 text-xs text-destructive">Link is required</p>
+                  )}
                 </div>
-                <Button onClick={addMember} className="w-full shadow-soft hover:shadow-dreamy transition-all duration-500">
-                  Add Member
+                <Button
+                  onClick={addMember}
+                  className="w-full shadow-soft hover:shadow-dreamy transition-all duration-500"
+                  disabled={!isTeamSelected || !isNewMemberValid || memberSubmitting}
+                >
+                  {memberSubmitting ? "Adding..." : "Add Member"}
                 </Button>
               </div>
 
@@ -417,6 +450,9 @@ const Dashboard = () => {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     value={newBlock.memberId}
                     onChange={(e) => setNewBlock({ ...newBlock, memberId: e.target.value })}
+                    onBlur={() => setAvailabilityTouched((t) => ({ ...t, memberId: true }))}
+                    aria-invalid={availabilityTouched.memberId && !newBlock.memberId}
+                    aria-describedby={availabilityTouched.memberId && !newBlock.memberId ? "member-error" : undefined}
                   >
                     <option value="">Select member</option>
                     {members.map((m) => (
@@ -425,6 +461,9 @@ const Dashboard = () => {
                       </option>
                     ))}
                   </select>
+                  {availabilityTouched.memberId && !newBlock.memberId && (
+                    <p id="member-error" className="mt-1 text-xs text-destructive">Member is required</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="day">Day of Week</Label>
@@ -449,7 +488,13 @@ const Dashboard = () => {
                       type="time"
                       value={newBlock.startTime}
                       onChange={(e) => setNewBlock({ ...newBlock, startTime: e.target.value })}
+                      onBlur={() => setAvailabilityTouched((t) => ({ ...t, startTime: true }))}
+                      aria-invalid={availabilityTouched.startTime && !newBlock.startTime}
+                      aria-describedby={availabilityTouched.startTime && !newBlock.startTime ? "start-error" : undefined}
                     />
+                    {availabilityTouched.startTime && !newBlock.startTime && (
+                      <p id="start-error" className="mt-1 text-xs text-destructive">Start time is required</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="end">End Time</Label>
@@ -458,14 +503,27 @@ const Dashboard = () => {
                       type="time"
                       value={newBlock.endTime}
                       onChange={(e) => setNewBlock({ ...newBlock, endTime: e.target.value })}
+                      onBlur={() => setAvailabilityTouched((t) => ({ ...t, endTime: true }))}
+                      aria-invalid={availabilityTouched.endTime && !newBlock.endTime}
+                      aria-describedby={availabilityTouched.endTime && !newBlock.endTime ? "end-error" : undefined}
                     />
+                    {availabilityTouched.endTime && !newBlock.endTime && (
+                      <p id="end-error" className="mt-1 text-xs text-destructive">End time is required</p>
+                    )}
                   </div>
                 </div>
+                {availabilityTouched.startTime && availabilityTouched.endTime && !isAvailabilityTimeValid && (
+                  <p className="text-xs text-destructive">End time must be after start time</p>
+                )}
                 <div className="grid grid-cols-2 gap-2">
-                  <Button onClick={addAvailability} className="w-full shadow-soft hover:shadow-dreamy transition-all duration-500">
-                    Add Availability
+                  <Button
+                    onClick={addAvailability}
+                    className="w-full shadow-soft hover:shadow-dreamy transition-all duration-500"
+                    disabled={!isTeamSelected || !isAvailabilityValid || availabilitySubmitting}
+                  >
+                    {availabilitySubmitting ? "Adding..." : "Add Availability"}
                   </Button>
-                  <Button variant="outline" onClick={addWeekPreset} className="w-full">
+                  <Button variant="outline" onClick={addWeekPreset} className="w-full" disabled={!newBlock.memberId}>
                     Add Mon–Fri 9–5 Next Week
                   </Button>
                 </div>
