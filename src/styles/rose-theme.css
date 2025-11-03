@@ -1,0 +1,79 @@
+@layer base {
+  :root {
+    /* Rose theme inspired by blurred coral/ink rose */
+    --background: 24 45% 95%;
+    --foreground: 12 20% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 12 20% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 12 20% 14%;
+
+    --primary: 15 86% 60%; /* coral */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 15 40% 88%; /* blush tint */
+    --secondary-foreground: 12 20% 14%;
+
+    --muted: 24 30% 92%;
+    --muted-foreground: 18 15% 40%;
+
+    --accent: 14 70% 52%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 2 72% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 24 18% 84%;
+    --input: 24 18% 84%;
+    --ring: 15 86% 60%;
+
+    --radius: 1.5rem;
+
+    /* Shadows and helpers */
+    --shadow-dreamy: 0 10px 32px -8px hsl(15 70% 60% / 0.25);
+    --shadow-soft: 0 6px 20px -6px hsl(12 22% 30% / 0.18);
+    --shadow-elevated: 0 18px 48px -10px hsl(12 22% 30% / 0.35);
+
+    /* Gradients */
+    --gradient-rose: linear-gradient(135deg, hsl(15 86% 62%), hsl(12 40% 30%));
+    --gradient-soft: linear-gradient(180deg, hsl(24 45% 96%), hsl(24 45% 95%));
+  }
+
+  .dark {
+    --background: 20 18% 9%;
+    --foreground: 24 40% 96%;
+
+    --card: 20 20% 12%;
+    --card-foreground: 24 40% 96%;
+
+    --popover: 20 20% 12%;
+    --popover-foreground: 24 40% 96%;
+
+    --primary: 14 90% 64%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 18 12% 18%;
+    --secondary-foreground: 24 40% 96%;
+
+    --muted: 20 15% 20%;
+    --muted-foreground: 24 15% 70%;
+
+    --accent: 14 70% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 2 72% 46%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 20 15% 22%;
+    --input: 20 15% 22%;
+    --ring: 14 90% 60%;
+
+    --shadow-dreamy: 0 10px 32px -8px hsl(14 70% 55% / 0.35);
+    --shadow-soft: 0 6px 20px -6px hsl(18 15% 8% / 0.45);
+    --shadow-elevated: 0 18px 48px -10px hsl(18 15% 8% / 0.6);
+  }
+}
+
+

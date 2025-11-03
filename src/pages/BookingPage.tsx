@@ -9,9 +9,11 @@ import { toast } from "sonner";
 
 interface TimeSlot {
   id: string;
+  date: string;
   start: string;
   end: string;
-  date: string;
+  startISO: string;
+  endISO: string;
 }
 
 const BookingPage = () => {
@@ -28,16 +30,29 @@ const BookingPage = () => {
   }, [team_id]);
 
   const fetchAvailableSlots = async () => {
-    // Mock data - replace with actual API call
-    // GET /api/book/${team_id}/slots
-    const mockSlots: TimeSlot[] = [
-      { id: "1", date: "2025-11-04", start: "09:00", end: "10:00" },
-      { id: "2", date: "2025-11-04", start: "10:00", end: "11:00" },
-      { id: "3", date: "2025-11-04", start: "14:00", end: "15:00" },
-      { id: "4", date: "2025-11-05", start: "09:00", end: "10:00" },
-      { id: "5", date: "2025-11-05", start: "11:00", end: "12:00" },
-    ];
-    setSlots(mockSlots);
+    try {
+      const res = await fetch(`/api/book/${team_id}`);
+      if (!res.ok) throw new Error();
+      const data: Array<{ id: number; start_time: string; end_time: string } > = await res.json();
+      const mapped: TimeSlot[] = data.map((s) => {
+        const start = new Date(s.start_time);
+        const end = new Date(s.end_time);
+        const dateStr = start.toISOString().slice(0, 10);
+        const startLabel = start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        const endLabel = end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        return {
+          id: String(s.id),
+          date: dateStr,
+          start: startLabel,
+          end: endLabel,
+          startISO: start.toISOString(),
+          endISO: end.toISOString(),
+        };
+      });
+      setSlots(mapped);
+    } catch {
+      toast.error("Failed to load available slots");
+    }
   };
 
   const handleBooking = async () => {
@@ -49,14 +64,16 @@ const BookingPage = () => {
     setLoading(true);
 
     try {
-      // POST to /book/${team_id}/reserve
+      const slot = slots.find((s) => s.id === selectedSlot);
+      if (!slot) throw new Error("Invalid slot");
       const response = await fetch(`/api/book/${team_id}/reserve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          slot_id: selectedSlot,
-          guest_name: guestInfo.name,
-          guest_email: guestInfo.email,
+          start_time: slot.startISO,
+          end_time: slot.endISO,
+          attendee_email: guestInfo.email,
+          summary: `Booking with ${guestInfo.name}`,
         }),
       });
 

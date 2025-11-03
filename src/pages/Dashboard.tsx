@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,14 +8,13 @@ import { toast } from "sonner";
 import DecorativeImage from "@/components/DecorativeImage";
 
 interface TeamMember {
-  id: string;
+  id: number;
   name: string;
-  googleLink: string;
-  connected: boolean;
+  google_booking_link: string;
+  display_email?: string | null;
 }
 
-interface AvailabilityBlock {
-  id: string;
+interface AvailabilityBlockForm {
   memberId: string;
   dayOfWeek: string;
   startTime: string;
@@ -23,54 +22,139 @@ interface AvailabilityBlock {
 }
 
 const Dashboard = () => {
+  const [teamId, setTeamId] = useState<number | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [availability, setAvailability] = useState<AvailabilityBlock[]>([]);
   const [newMember, setNewMember] = useState({ name: "", googleLink: "" });
-  const [newBlock, setNewBlock] = useState({
+  const [newBlock, setNewBlock] = useState<AvailabilityBlockForm>({
     memberId: "",
     dayOfWeek: "Monday",
     startTime: "09:00",
     endTime: "17:00",
   });
 
-  const addMember = () => {
+  useEffect(() => {
+    const initializeTeam = async () => {
+      const stored = localStorage.getItem("teamId");
+      if (stored) {
+        const id = Number(stored);
+        setTeamId(id);
+        await fetchMembers(id);
+        return;
+      }
+      try {
+        const res = await fetch("/api/teams", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: "My Team" }),
+        });
+        if (!res.ok) throw new Error("Failed to create team");
+        const data = await res.json();
+        setTeamId(data.id);
+        localStorage.setItem("teamId", String(data.id));
+      } catch (e) {
+        toast.error("Unable to initialize team");
+      }
+    };
+    initializeTeam();
+  }, []);
+
+  const fetchMembers = async (id: number) => {
+    try {
+      const res = await fetch(`/api/teams/${id}/members`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setMembers(data);
+    } catch {
+      toast.error("Failed to load members");
+    }
+  };
+
+  const addMember = async () => {
+    if (!teamId) {
+      toast.error("Team not initialized yet");
+      return;
+    }
     if (!newMember.name || !newMember.googleLink) {
       toast.error("Please fill in all fields");
       return;
     }
-
-    const member: TeamMember = {
-      id: Date.now().toString(),
-      name: newMember.name,
-      googleLink: newMember.googleLink,
-      connected: false,
-    };
-
-    setMembers([...members, member]);
-    setNewMember({ name: "", googleLink: "" });
-    toast.success("Team member added successfully");
+    try {
+      const res = await fetch(`/api/teams/${teamId}/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newMember.name,
+          google_booking_link: newMember.googleLink,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const created: TeamMember = await res.json();
+      setMembers((prev) => [...prev, created]);
+      setNewMember({ name: "", googleLink: "" });
+      toast.success("Team member added successfully");
+    } catch {
+      toast.error("Failed to add member");
+    }
   };
 
-  const connectOAuth = (memberId: string) => {
+  const connectOAuth = (memberId: number) => {
     // Open OAuth flow in new window
     const authUrl = `/api/auth/google/login?member_id=${memberId}`;
     window.open(authUrl, "_blank", "width=600,height=700");
     toast.info("OAuth window opened");
   };
 
-  const addAvailability = () => {
+  const addAvailability = async () => {
+    if (!teamId) {
+      toast.error("Team not initialized yet");
+      return;
+    }
     if (!newBlock.memberId) {
       toast.error("Please select a team member");
       return;
     }
-
-    const block: AvailabilityBlock = {
-      id: Date.now().toString(),
-      ...newBlock,
-    };
-
-    setAvailability([...availability, block]);
-    toast.success("Availability block added");
+    try {
+      const days = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
+      const targetIdx = days.indexOf(newBlock.dayOfWeek);
+      const now = new Date();
+      const currentIdx = now.getDay();
+      let addDays = (targetIdx - currentIdx + 7) % 7;
+      if (addDays === 0) addDays = 7;
+      const date = new Date(now);
+      date.setDate(now.getDate() + addDays);
+      const [sh, sm] = newBlock.startTime.split(":").map(Number);
+      const [eh, em] = newBlock.endTime.split(":").map(Number);
+      const start = new Date(date);
+      start.setHours(sh, sm, 0, 0);
+      const end = new Date(date);
+      end.setHours(eh, em, 0, 0);
+      const payload = {
+        member_id: Number(newBlock.memberId),
+        blocks: [
+          {
+            start_time: start.toISOString(),
+            end_time: end.toISOString(),
+          },
+        ],
+      };
+      const res = await fetch(`/api/teams/${teamId}/availability`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Availability block added");
+    } catch {
+      toast.error("Failed to add availability");
+    }
   };
 
   return (
@@ -136,15 +220,15 @@ const Dashboard = () => {
                   >
                     <div className="flex-1">
                       <p className="font-medium">{member.name}</p>
-                      <p className="text-sm text-muted-foreground truncate">{member.googleLink}</p>
+                      <p className="text-sm text-muted-foreground truncate">{member.google_booking_link}</p>
                     </div>
                     <Button
                       size="sm"
-                      variant={member.connected ? "outline" : "default"}
+                      variant="default"
                       onClick={() => connectOAuth(member.id)}
                     >
                       <ExternalLink className="mr-2 h-4 w-4" />
-                      {member.connected ? "Connected" : "Connect"}
+                      Connect
                     </Button>
                   </div>
                 ))}

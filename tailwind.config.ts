@@ -13,6 +13,14 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        retro: ["Space Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+      },
+      boxShadow: {
+        dreamy: "var(--shadow-dreamy)",
+        soft: "var(--shadow-soft)",
+        elevated: "var(--shadow-elevated)",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
