@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 async function sha256Hex(input: string): Promise<string> {
@@ -17,6 +18,7 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -62,7 +64,18 @@ const AdminLogin = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <Input placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <div>
+            <Input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <div className="mt-2 flex items-center gap-2">
+              <Checkbox id="show-pass" checked={showPassword} onCheckedChange={(v) => setShowPassword(Boolean(v))} />
+              <label htmlFor="show-pass" className="text-xs text-muted-foreground">Show password</label>
+            </div>
+          </div>
           <Button className="w-full" onClick={handleLogin} disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
           </Button>
